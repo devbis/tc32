@@ -1,0 +1,374 @@
+	v=wr_reg (0xbc, 0xf003ffff, 4) //set pin function as pwm
+        v=wr_reg (0x86, 0x00, 1)//close gpio
+	v=wr_reg (0x8e, 0xfe, 1)//close gpio
+        v=wr_reg (0x96, 0x00, 1)//close gpio
+	v=wr_reg (0x9e, 0x36, 1)//close gpio  
+	v=wr_reg (0x302,0x00, 1)  //set pwm_clk_div    
+cfg_pwm (0,0,0,0x0096,0x05dc,0,0,0,0,1 )
+cfg_pwm (1,2,40,0x012c,0x05dc,0,0,0,0,1 )
+cfg_pwm (2,0,80,0x01c2,0x05dc,0,0,0,0,1 )
+cfg_pwm (3,0,120,0x0258,0x05dc,0,0,0,0,1 )
+cfg_pwm (4,0,160,0x02ee,0x05dc,0,0,0,0,1 )
+cfg_pwm (5,0,200,0x0384,0x05dc,0,0,0,0,1 )
+cfg_pwm (6,0,240,0x041a,0x05dc,0,0,0,0,1 )
+cfg_pwm (7,0,280,0x04b0,0x05dc,0,0,0,0,1 )
+cfg_pwm (8,0,320,0x05dc,0x05dc,0,0,0,0,1 )
+
+sub cfg_pwm (chn,mode,phase,tcmp,tmax,pnum,inv,invinv,pola,start)
+        if (mode > 1) then
+        r=rd_reg(0x303,1)
+        if (chn=0) then
+        pmode = or(r,0x3)
+        elseif (chn=1) then  
+        pmode = or(r,0xc)
+        endif
+        v=wr_reg(0x303,pmode,1)
+	elseif (mode > 0) then
+        r=rd_reg(0x303,1)
+        if (chn=0) then
+        pmode = and(or(r,0x1),0xd)
+        elseif (chn=1) then
+        pmode = and(or(r,0x4),0x7)
+        endif        
+        v=wr_reg(0x303,pmode,1)
+        else
+        r=rd_reg(0x303,1)
+        if (chn=0) then
+        pmode = and(0x0c,r)
+        elseif (chn=0) then
+        pmode = and(0x03,r)
+        endif
+        v=wr_reg(0x303,pmode,1)
+	endif
+
+        pwmphase =phase/360*tmax
+        phaseadr = chn * 2 + 0x32c
+        v=wr_reg(phaseadr,pwmphase,2)
+
+        tcmpadr = chn * 4 + 0x308
+        v=wr_reg(tcmpadr,tcmp,2)
+        tmaxadr = chn * 4 + 0x30a
+        v=wr_reg(tmaxadr,tmax,2)
+ 
+        if(chn=0) then
+        v=wr_reg(0x33e,pnum,2)
+        elseif (chn=1) then
+        v=wr_reg(0x340,pnum,2)
+        endif
+
+        if (inv) then
+        if(chn=0) then
+        r=rd_reg(0x304,1)
+        pinv = or(r,0x1)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=1) then
+        r=rd_reg(0x304,1)
+        pinv = or(r,0x2)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=2) then
+        r=rd_reg(0x304,1)
+        pinv = or(r,0x4)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=3) then
+        r=rd_reg(0x304,1)
+        pinv = or(r,0x8)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=4) then
+        r=rd_reg(0x304,1)
+        pinv = or(r,0x10)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=5) then
+        r=rd_reg(0x304,1)
+        pinv = or(r,0x20)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=6) then
+        r=rd_reg(0x304,1)
+        pinv = or(r,0x40)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=7) then
+        r=rd_reg(0x304,1)
+        pinv = or(r,0x80)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=8) then
+        r=rd_reg(0x305,1)
+        pinv = or(r,0x1)
+        v=wr_reg(0x305,pinv,1)        
+        endif
+        else
+        if(chn=0) then
+        r=rd_reg(0x304,1)
+        pinv = and(r,0xfe)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=1) then
+        r=rd_reg(0x304,1)
+        pinv = and(r,0xfd)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=2) then
+        r=rd_reg(0x304,1)
+        pinv = and(r,0xfb)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=3) then
+        r=rd_reg(0x304,1)
+        pinv = and(r,0xf7)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=4) then
+        r=rd_reg(0x304,1)
+        pinv = and(r,0xef)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=5) then
+        r=rd_reg(0x304,1)
+        pinv = and(r,0xdf)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=6) then
+        r=rd_reg(0x304,1)
+        pinv = and(r,0xbf)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=7) then
+        r=rd_reg(0x304,1)
+        pinv = and(r,0x7f)
+        v=wr_reg(0x304,pinv,1)
+        elseif(chn=8) then
+        r=rd_reg(0x305,1)
+        pinv = and(r,0xfe)
+        v=wr_reg(0x305,pinv,1)        
+        endif
+        endif
+
+
+        if (invinv) then
+        if(chn=0) then
+        r=rd_reg(0x305,1)
+        pinvinv = r or 0x2
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=1) then
+        r=rd_reg(0x305,1)
+        pinvinv = r or 0x4
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=2) then
+        r=rd_reg(0x305,1)
+        pinvinv = r or 0x8
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=3) then
+        r=rd_reg(0x305,1)
+        pinvinv = r or 0x10
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=4) then
+        r=rd_reg(0x305,1)
+        pinvinv = r or 0x20
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=5) then
+        r=rd_reg(0x305,1)
+        pinvinv = r or 0x40
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=6) then
+        r=rd_reg(0x305,1)
+        pinvinv = r or 0x80
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=7) then
+        r=rd_reg(0x306,1)
+        pinvinv = r or 0x1
+        v=wr_reg(0x306,pinvinv,1)
+        elseif(chn=8) then
+        r=rd_reg(0x306,1)
+        pinvinv = r or 0x2
+        v=wr_reg(0x306,pinvinv,1)        
+        endif
+        else
+        if(chn=0) then
+        r=rd_reg(0x305,1)
+        pinvinv = r and 0xfd
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=1) then
+        r=rd_reg(0x305,1)
+        pinvinv = r and 0xfb
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=2) then
+        r=rd_reg(0x305,1)
+        pinvinv = r and 0xf7
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=3) then
+        r=rd_reg(0x305,1)
+        pinvinv = r and 0xef
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=4) then
+        r=rd_reg(0x305,1)
+        pinvinv = r and 0xdf
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=5) then
+        r=rd_reg(0x305,1)
+        pinvinv = r and 0xbf
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=6) then
+        r=rd_reg(0x305,1)
+        pinvinv = r and 0x7f
+        v=wr_reg(0x305,pinvinv,1)
+        elseif(chn=7) then
+        r=rd_reg(0x306,1)
+        pinvinv = r and 0xfe
+        v=wr_reg(0x306,pinvinv,1)
+        elseif(chn=8) then
+        r=rd_reg(0x306,1)
+        pinvinv = r and 0xfd
+        v=wr_reg(0x306,pinvinv,1)        
+        endif
+        endif
+
+        if (pola) then
+        if(chn=0) then
+        r=rd_reg(0x306,1)
+        ppola = r or 0x4
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=1) then
+        r=rd_reg(0x306,1)
+        ppola = r or 0x8
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=2) then
+        r=rd_reg(0x306,1)
+        ppola = r or 0x10
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=3) then
+        r=rd_reg(0x306,1)
+        ppola = r or 0x20
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=4) then
+        r=rd_reg(0x306,1)
+        ppola = r or 0x40
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=5) then
+        r=rd_reg(0x306,1)
+        ppola = r or 0x80
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=6) then
+        r=rd_reg(0x307,1)
+        ppola = r or 0x01
+        v=wr_reg(0x307,ppola,1)
+        elseif(chn=7) then
+        r=rd_reg(0x307,1)
+        ppola = r or 0x2
+        v=wr_reg(0x307,ppola,1)
+        elseif(chn=8) then
+        r=rd_reg(0x307,1)
+        ppola = r or 0x4
+        v=wr_reg(0x307,ppola,1)        
+        endif
+        else
+        if(chn=0) then
+        r=rd_reg(0x306,1)
+        ppola = r and 0xfb
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=1) then
+        r=rd_reg(0x306,1)
+        ppola = r and 0xf7
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=2) then
+        r=rd_reg(0x306,1)
+        ppola = r and 0xef
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=3) then
+        r=rd_reg(0x306,1)
+        ppola = r and 0xdf
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=4) then
+        r=rd_reg(0x306,1)
+        ppola = r and 0xbf
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=5) then
+        r=rd_reg(0x306,1)
+        ppola = r and 0x7f
+        v=wr_reg(0x306,ppola,1)
+        elseif(chn=6) then
+        r=rd_reg(0x307,1)
+        ppola = r and 0xfe
+        v=wr_reg(0x307,ppola,1)
+        elseif(chn=7) then
+        r=rd_reg(0x307,1)
+        ppola = r and 0xfd
+        v=wr_reg(0x307,ppola,1)
+        elseif(chn=8) then
+        r=rd_reg(0x307,1)
+        ppola = r and 0xfb
+        v=wr_reg(0x307,ppola,1)        
+        endif
+        endif
+
+        if (start) then
+        if(chn=0) then
+        r=rd_reg(0x300,1)
+        pstart = or(r,0x1)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=1) then
+        r=rd_reg(0x300,1)
+        pstart = or(r,0x2)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=2) then
+        r=rd_reg(0x300,1)
+        pstart = or(r,0x4)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=3) then
+        r=rd_reg(0x300,1)
+        pstart = or(r,0x8)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=4) then
+        r=rd_reg(0x300,1)
+        pstart = or(r,0x10)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=5) then
+        r=rd_reg(0x300,1)
+        pstart = or(r,0x20)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=6) then
+        r=rd_reg(0x300,1)
+        pstart = or(r,0x40)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=7) then
+        r=rd_reg(0x300,1)
+        pstart = or(r,0x80)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=8) then
+        r=rd_reg(0x301,1)
+        pstart = or(r,0x1)
+        v=wr_reg(0x301,pstart,1)        
+        endif
+        else
+        if(chn=0) then
+        r=rd_reg(0x300,1)
+        pstart = and(r,0xfe)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=1) then
+        r=rd_reg(0x300,1)
+        pstart = and(r,0xfd)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=2) then
+        r=rd_reg(0x300,1)
+        pstart = and(r,0xfb)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=3) then
+        r=rd_reg(0x300,1)
+        pstart = and(r,0xf7)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=4) then
+        r=rd_reg(0x300,1)
+        pstart = and(r,0xef)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=5) then
+        r=rd_reg(0x300,1)
+        pstart = and(r,0xdf)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=6) then
+        r=rd_reg(0x300,1)
+        pstart = and(r,0xbf)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=7) then
+        r=rd_reg(0x300,1)
+        pstart = and(r,0x7f)
+        v=wr_reg(0x300,pstart,1)
+        elseif(chn=8) then
+        r=rd_reg(0x301,1)
+        pstart = and(r,0xfe)
+        v=wr_reg(0x301,pstart,1)        
+        endif
+        endif                
+
+	print "config pwm done "
+	print "\r\n"
+endsub

@@ -1,0 +1,25 @@
+//print	"begin to suspend\r"
+//wr_reg (0x28,0x0, 1)
+//wr_reg (0x29,0x0, 1)
+//wr_reg (0x5ae,0x0, 1)
+
+//wr_reg (0x58d,0x80, 1)
+//wr_reg (0x58e,0x00, 1)
+//wr_reg (0x586,0x08, 1)
+
+wr_reg(0x4e9,0x00,1)
+wr_reg(0x590,0x600000,3)
+
+wr_reg (0xb8,0x609302,4) 
+wr_reg (0xb8,0x600015,4)   //power down enable
+wr_reg (0xb8,0x600016,4)   //t1 as wakeup source..
+wr_reg (0xb8,0x60c017,4)   //power down enable
+wr_reg (0xb8,0x60ff18,4)   //power down 32K RC ,32k crystal, RF TX,RF rx, sar adc, iso enable..
+//wr_reg (0xb8,0x60df05,4)   //power down 32K RC ,32k crystal,analog ldo,master bandgap,temper snsor
+//wr_reg (0xb8,0x60ff06,4)   //power down loldo,bandgap,ldo in rf, band gap pll...
+//wr_reg (0xb8,0x60120c,4)   //
+
+wr_reg (0x6e,0x00, 1)      //wake up source
+wr_reg (0x6f,0x80, 1)      //sleep
+
+print "begin suspend"

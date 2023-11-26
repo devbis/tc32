@@ -1,0 +1,152 @@
+////////////////////////////////////////////
+//      m/integer_N/fraction from freq
+////////////////////////////////////////////
+fraction = p_get_buf(0, 4)    //fractional part of freq in Khz
+rxMod    = p_get_buf(1, 4)    //rxMod for 8/9 or 4/5
+			      //4:for 4/5
+			      //8:for 8/9
+freq = p_get_size (0, 4)
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+intmode = 0
+LoSwap  = 1	 // 0 for Lo = signal + IF ; 1 for Lo = signal - IF
+print "Set 5328 Rx PLL"
+print "intmode: ", intmode
+print "Loswap: ", LoSwap, "\n"
+///////////////////////////////////////////////////////
+if ( 0=LoSwap) then
+	freq = (freq + fraction/1000 + 2.0)*4/5
+else
+	freq = (freq + fraction/1000 - 2.0)*4/5
+endif
+
+print "freq: ", freq, "Mhz\r"
+print "rxMod: ", rxMod,"\r"
+
+m = int ((freq+4) / 8)   // add 4M offset to round the ref cal freq
+m_low = m % 256
+m_high = (m - m_low) / 256
+print "m_low: ", m_low, "m_high", m_high, "\r"
+
+ref = 16
+if (0 = intmode ) then
+	rdiv = 1
+else
+	rdiv = 32
+endif
+print "rdiv: ", rdiv
+
+fmul = (freq)*rdiv
+integer_N_mod = fmul % (2*ref)
+integer_N = (fmul - integer_N_mod) / (2*ref)
+imod = integer_N_mod*4194304
+imod_rem = imod%ref
+frac_in = (imod - imod_rem)/ref  
+frac_in = int(frac_in)
+print "set N", integer_N, "F", frac_in, " m: ", m
+printx integer_N, 2, '\t'
+printx frac_in, 3, '\t'
+printx m, 1, '\r'
+print "\r\n"
+
+//analog
+spi_wr_reg(0x93, 0x1c)	  //rx prescaler current [ 4:3], dpll tuning ref [7:6] ZQ:add prescale current from 0x14 to 0x1c 20120228	
+spi_wr_reg(0x06, 0x02) //pd
+spi_wr_reg(0x9f, 0x24) //boost prescaler bias current
+sub_wr_ana(0x8a, 2, 4, 3) //pfd_s1, pfss0
+spi_wr_reg(0x8c, m_low) //m(pll_dpll)
+sub_wr_ana(0x8d, m_high, 1, 0)
+sub_wr_ana(0x8d, 0, 5, 5) //dpll_en 0
+sub_wr_ana(0x8d, 1, 5, 5) //dpll_en 1
+sub_wr_ana(0x8d, 3, 7, 6) //dpll count cycle
+sub_wr_ana(0x8e, 2, 7, 6) // rx vco divide by 2 bias current up control 1: current up by 60uA
+sub_wr_ana(0x90, 0, 1, 1) //set to mash3 	
+spi_wr_reg(0x94,0x48)	  // [7:6] vco bias current [4:0] tmod compensation, match with tx setting 
+
+if(0=LoSwap) then
+	spi_wr_reg(0x9b, 0x2c) 	  //[7], cplx flt IQ swap, [3:0] cap bank
+else
+	spi_wr_reg(0x9b, 0xac) 	  //[7], cplx flt IQ swap, [3:0] cap bank
+endif
+
+sub_wr_ana(0x9a, 4, 2, 0) //LNA cap sel, rx_LNA_out_tune = 'b100, for A1 2012-4-23
+spi_wr_reg(0x07,0xfc)     //cp &sd ldo, lowest output
+spi_wr_reg(0x0b, 0x8e)
+//gpio20 input enable
+v = wr_reg (0x5b2, 0x00, 1)
+v = wr_reg (0x58a, 0x00, 1)
+//frac_in
+v = wr_reg (0x4e4, frac_in, 3)
+//integer_in
+v = wr_reg (0x4d8, integer_N, 2)
+//rdiv
+//v = wr_reg (0x4de, rdiv, 1)   //set ref div by rdiv
+v = wr_reg (0x4da, rdiv, 1)   //set ref div by rdiv
+//SD ref clock needs to be changed to feedback when rdiv is not 1
+
+spi_wr_reg(0x91, 0x3) // match tx setting modified by ZQ
+spi_wr_reg(0x8a, 0x96)
+spi_wr_reg(0x8b, 0x8)
+
+if (1=intmode) then
+    print "I am here"
+    spi_wr_reg(0x93, 0x1e) //change LPF to fit integer mode
+    spi_wr_reg(0x91, 0)
+    spi_wr_reg(0x8a, 0x96)
+    spi_wr_reg(0x8b, 0x0f)//cp_i_sel [3:0]
+else
+	if(rdiv > 1) then
+	spi_wr_reg(0x8b, 0x08)
+	sub_wr_ana(0x93, 0, 2, 2) //change feedback clock for SD
+	endif
+endif
+
+//initial
+v = wr_reg (0x4e8, 0x1c0a1038, 4)
+v = wr_reg (0x4ed, 0x78, 1) //manual_en
+v = wr_reg (0x4ee, 0xff, 1) //manual_en
+v = wr_reg (0x4ef, 0x1f, 1) //manual_en
+
+
+wr_reg(0x428,0x01,1)  // need to set 1 before rxcyc0
+//1 rxcyc0 1
+sub_bit_set(0x4e9, 0)
+//2 tp_cyc 1
+//sub_bit_set(0x4e9, 5)
+
+//3 sof 1
+sub_bit_set(0x4e8, 1)
+
+v = rd_reg (0x4f0, 2)
+print "rxcap: "
+printx v, 1, '\n'
+print "\r\n"
+
+//4 sof 0
+sub_bit_clr(0x4e8, 1)
+//5 tp_cyc 0
+//sub_bit_clr(0x4e9, 5)
+
+//6 sd_resetb 1/intg_en 0
+//sub_bit_set(0x4ea, 0)
+//sub_bit_clr(0x4ea, 1)
+if (intmode=0) then
+    //6 sd_resetb 1/ intg_en 0 for fractional mode
+	sub_bit_set(0x4ea, 0)
+    sub_bit_clr(0x4ea, 1)
+else
+    //6.a sd_resetb 0/intg_en 1 for integer mode
+    sub_bit_clr(0x4ea, 0)
+    sub_bit_set(0x4ea, 1)
+endif
+
+//7 rxcyc1 1
+sub_bit_set(0x4e9, 1)
+print "RX datapath on\r\n"
+//rx enable
+//v = wr_reg (0x437, 0x9a, 1)
+v = wr_reg (0x428, 0x01, 1)
+//wr_reg(0x422, 0x0a, 1)
+//wr_reg(0x422, 0x10, 1)
+wr_reg(0x13c, 0x40, 1)
+wr_reg(0x42c, 0xff, 1)// for 255 B packet length
